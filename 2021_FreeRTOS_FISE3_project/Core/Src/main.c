@@ -202,7 +202,7 @@ int main(void)
 	"Task Init",
 	1000,
 	NULL,
-	3,
+	4,
 	&xHandleTaskInit
 	) != pdPASS ){
 		printf("Init task created");
