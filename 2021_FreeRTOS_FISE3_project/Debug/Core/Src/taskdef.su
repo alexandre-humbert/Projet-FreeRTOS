@@ -1,0 +1,4 @@
+taskdef.c:18:7:vCallbackT1	16	static
+taskdef.c:22:7:vCallbackT2	16	static
+taskdef.c:27:6:vCallbackT3	16	static
+taskdef.c:31:6:vTaskInit	48	static
