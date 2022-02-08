@@ -9,8 +9,12 @@
 #include "stm32f429i_discovery_lcd.h"
 #include <stdio.h>
 #include <stdlib.h>
+
+#include "myLib.h"
 #include "main.h"
+
 #include "taskdef.h"
+#include "i2c.h"
 
 
 UART_HandleTypeDef huart1;
@@ -21,18 +25,15 @@ SemaphoreHandle_t SemB_3;
 SemaphoreHandle_t SemB_4;
 
 void  vCallbackT1(TimerHandle_t xTimer){
-	printf("Timer1");
 	xSemaphoreGive(SemB_1a);
 }
 
 void  vCallbackT2(TimerHandle_t xTimer){
-	printf("Timer2");
 	xSemaphoreGive(SemB_1b);
 }
 
 
 void vCallbackT3(TimerHandle_t xTimer){
-	printf("Timer3");
 	xSemaphoreGive(SemB_3);
 	xSemaphoreGive(SemB_4);
 }
@@ -118,8 +119,6 @@ void vTaskInit(void *pvParameters ){
 	// TACHE - END
 	//---------------------------------------
 
-
-
 	// Destruction de la tache
 	vTaskDelete(NULL);
 }
@@ -128,13 +127,22 @@ void vTaskInit(void *pvParameters ){
 void vTask1a(void *pvParameters ){
 	while(1)
 	{
+		printf("Tache1a");
 		xSemaphoreTake(SemB_1a, portMAX_DELAY);
+		double acc[3];
+
+		double gyro[3];
+
+		MeasureA(&hi2c3,acc);
+		MeasureG(&hi2c3,gyro);
+
 	}
 }
 
 void vTask1b(void *pvParameters ){
 	while(1)
 	{
+		printf("Tache1b");
 		xSemaphoreTake(SemB_1b, portMAX_DELAY);
 
 	}
@@ -158,6 +166,7 @@ void vTask2b(void *pvParameters ){
 void vTask3(void *pvParameters ){
 	while(1)
 	{
+		printf("tache3");
 		xSemaphoreTake(SemB_3, portMAX_DELAY);
 
 	}
@@ -166,6 +175,7 @@ void vTask3(void *pvParameters ){
 void vTask4(void *pvParameters ){
 	while(1)
 	{
+		printf("tache4");
 		xSemaphoreTake(SemB_4, portMAX_DELAY);
 
 	}

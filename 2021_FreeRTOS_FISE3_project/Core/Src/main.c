@@ -186,7 +186,7 @@ int main(void)
 	I2C_Scan(&hi2c3,I2C_add);
 
 /*Sensors initialization*/
-	Init_MPU9250(&hi2c3);
+	Init(&hi2c3);
 	Init_BMP280(&hi2c3);
 
 /*I2C3 bus scan*/

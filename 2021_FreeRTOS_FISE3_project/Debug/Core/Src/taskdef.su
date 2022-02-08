@@ -1,4 +1,10 @@
-taskdef.c:18:7:vCallbackT1	16	static
-taskdef.c:22:7:vCallbackT2	16	static
-taskdef.c:27:6:vCallbackT3	16	static
-taskdef.c:31:6:vTaskInit	48	static
+taskdef.c:27:7:vCallbackT1	16	static
+taskdef.c:31:7:vCallbackT2	16	static
+taskdef.c:36:6:vCallbackT3	16	static
+taskdef.c:44:6:vTaskInit	48	static
+taskdef.c:127:6:vTask1a	64	static
+taskdef.c:142:6:vTask1b	16	static
+taskdef.c:151:6:vTask2a	16	static
+taskdef.c:159:6:vTask2b	16	static
+taskdef.c:166:6:vTask3	16	static
+taskdef.c:175:6:vTask4	16	static

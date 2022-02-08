@@ -41,7 +41,7 @@ Core/Src/taskdef.o: ../Core/Src/taskdef.c \
  ../Drivers/BSP/STM32F429I-Discovery/../../../Utilities/Fonts/fonts.h \
  ../Drivers/BSP/STM32F429I-Discovery/../Components/ili9341/ili9341.h \
  ../Drivers/BSP/STM32F429I-Discovery/../Components/ili9341/../Common/lcd.h \
- ../Core/Inc/main.h \
+ ../Core/Inc/myLib.h ../Core/Inc/main.h \
  ../Middlewares/Third_Party/FreeRTOS/Source/include/FreeRTOS.h \
  ../Core/Inc/FreeRTOSConfig.h ../Core/Inc/taskdef.h \
  ../Middlewares/Third_Party/FreeRTOS/Source/include/projdefs.h \
@@ -58,7 +58,7 @@ Core/Src/taskdef.o: ../Core/Src/taskdef.c \
  ../Middlewares/Third_Party/FreeRTOS/Source/include/queue.h \
  ../Middlewares/Third_Party/FreeRTOS/Source/include/event_groups.h \
  ../Middlewares/Third_Party/FreeRTOS/Source/include/timers.h \
- ../Core/Inc/taskdef.h
+ ../Core/Inc/taskdef.h ../Core/Inc/i2c.h ../Core/Inc/main.h
 
 ../Drivers/BSP/STM32F429I-Discovery/stm32f429i_discovery_lcd.h:
 
@@ -144,6 +144,8 @@ Core/Src/taskdef.o: ../Core/Src/taskdef.c \
 
 ../Drivers/BSP/STM32F429I-Discovery/../Components/ili9341/../Common/lcd.h:
 
+../Core/Inc/myLib.h:
+
 ../Core/Inc/main.h:
 
 ../Middlewares/Third_Party/FreeRTOS/Source/include/FreeRTOS.h:
@@ -181,3 +183,7 @@ Core/Src/taskdef.o: ../Core/Src/taskdef.c \
 ../Middlewares/Third_Party/FreeRTOS/Source/include/timers.h:
 
 ../Core/Inc/taskdef.h:
+
+../Core/Inc/i2c.h:
+
+../Core/Inc/main.h:
