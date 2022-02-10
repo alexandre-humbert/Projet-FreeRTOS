@@ -200,7 +200,7 @@ int main(void)
 	if( xTaskCreate(
 	vTaskInit,
 	"Task Init",
-	1000,
+	2000,
 	NULL,
 	4,
 	&xHandleTaskInit
