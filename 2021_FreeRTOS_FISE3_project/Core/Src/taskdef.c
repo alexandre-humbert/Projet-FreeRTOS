@@ -2,7 +2,7 @@
  * taskdef.c
  *
  *  Created on: Jan 20, 2021
- *      Author: florentgoutailler
+ *      Author: Alexandre Humbert - Julien Chavas - florentgoutailler
  */
 
 
@@ -34,6 +34,11 @@ typedef struct
 	double gyro[3];
 }message_capteur;
 
+typedef struct
+{
+	double P;
+	double T;
+}message_capteur2;
 
 typedef struct
 {
@@ -42,6 +47,11 @@ typedef struct
 	double yaw;
 }message_calcul;
 
+typedef struct
+{
+	double A;
+	double T;
+}message_calcul2;
 
 void  vCallbackT1(TimerHandle_t xTimer){
 	xSemaphoreGive(SemB_1a);
@@ -91,7 +101,7 @@ void vTaskInit(void *pvParameters ){
 	SemB_3  = xSemaphoreCreateBinary();
 	SemB_4  = xSemaphoreCreateBinary();
 
-	// Vérification
+	// Vérification des seémaphores
 
 	if(SemB_1a==NULL || SemB_1b==NULL || SemB_3==NULL || SemB_4==NULL)
 	{
@@ -139,7 +149,7 @@ void vTaskInit(void *pvParameters ){
 
 	// Creation Queue
 
-	xQueueT1a_T2a = xQueueCreate( 5, sizeof( message_capteur ) );
+	xQueueT1a_T2a = xQueueCreate( 1, sizeof( message_capteur ) );
 
 	if( xQueueT1a_T2a == NULL )
 	{
@@ -147,7 +157,7 @@ void vTaskInit(void *pvParameters ){
 	  exit(1);
 	}
 
-	xQueueT2a_T3 = xQueueCreate( 5, sizeof( message_calcul ) );
+	xQueueT2a_T3 = xQueueCreate( 1, sizeof( message_calcul ) );
 
 	if( xQueueT2a_T3 == NULL )
 	{
@@ -155,7 +165,7 @@ void vTaskInit(void *pvParameters ){
       exit(1);
 	}
 
-	xQueueT2a_T4 = xQueueCreate( 5, sizeof( message_calcul ) );
+	xQueueT2a_T4 = xQueueCreate( 1, sizeof( message_calcul ) );
 
 	if( xQueueT2a_T4 == NULL )
 	{
@@ -163,7 +173,7 @@ void vTaskInit(void *pvParameters ){
 	  exit(1);
 	}
 
-	xQueueT1b_T2a = xQueueCreate( 5, sizeof( double* ) );
+	xQueueT1b_T2a = xQueueCreate( 1, sizeof( double* ) );
 
 	if( xQueueT1b_T2a == NULL )
 	{
@@ -171,7 +181,7 @@ void vTaskInit(void *pvParameters ){
 	  exit(1);
 	}
 
-	xQueueT1b_T2b = xQueueCreate( 5, sizeof( double ) );
+	xQueueT1b_T2b = xQueueCreate( 1, sizeof( message_capteur2 ) );
 
 	if( xQueueT1b_T2b == NULL )
 	{
@@ -179,7 +189,7 @@ void vTaskInit(void *pvParameters ){
 	  exit(1);
 	}
 
-	xQueueT2b_T3 = xQueueCreate( 5, sizeof( double* ) );
+	xQueueT2b_T3 = xQueueCreate( 1, sizeof( message_calcul2 ) );
 
 	if( xQueueT2b_T3 == NULL )
 	{
@@ -187,7 +197,7 @@ void vTaskInit(void *pvParameters ){
 	  exit(1);
 	}
 
-	xQueueT2b_T4 = xQueueCreate( 5, sizeof( double ) );
+	xQueueT2b_T4 = xQueueCreate( 1, sizeof( message_calcul2 ) );
 
 	if( xQueueT2b_T4 == NULL )
 	{
@@ -249,10 +259,9 @@ void vTask1b(void *pvParameters ){
 	double bias[3]={0,0,0};
 	double scale[3]={1,1,1};
 
-	double T;
 	int32_t Tfine;
-	double P;
 
+	message_capteur2 message;
 	while(1)
 	{
 		xSemaphoreTake(SemB_1b, portMAX_DELAY);
@@ -260,16 +269,17 @@ void vTask1b(void *pvParameters ){
         xSemaphoreTake( MutexI2C, portMAX_DELAY);
 
 		MeasureM(&hi2c3,mag,bias,scale);
-		MeasureT_BMP280(&hi2c3,&T,&Tfine);
-		MeasureP(&hi2c3,&P,&Tfine);
+		MeasureT_BMP280(&hi2c3,&message.T,&Tfine);
+		MeasureP(&hi2c3,&message.P,&Tfine);
 
 
-
-	    if( xQueueSend( xQueueT1b_T2a, ( void * ) mag, 0) != pdPASS )
+	    if( xQueueSend( xQueueT1b_T2a, ( void * ) mag, portMAX_DELAY) != pdPASS )
 	    {
 	        printf("Erreur envoi data\n\r");
 	    }
-	    if( xQueueSend( xQueueT1b_T2b, ( void * ) &P, 0) != pdPASS )
+
+
+	    if( xQueueSend( xQueueT1b_T2b, ( void * ) &message, portMAX_DELAY) != pdPASS )
 	    {
 	        printf("Erreur envoi data\n\r");
 	    }
@@ -283,6 +293,7 @@ void vTask2a(void *pvParameters ){
 	double mag[3];
 	message_calcul messageT3T4;
 	int i = 0;
+	int j=0;
 
 	while(1)
 	{
@@ -290,56 +301,58 @@ void vTask2a(void *pvParameters ){
 
 		if( xQueueReceive( xQueueT1a_T2a, ( void * ) &message, portMAX_DELAY ) == pdPASS )
 		{
+			if (j == 1){ // On récupère une valeur tous les 2 calculs (T1a 100 Hz et T1b 50 Hz)
 			if( xQueueReceive( xQueueT1b_T2a, ( void * ) mag, portMAX_DELAY ) == pdPASS )
-			{
-				Pitch(&hi2c3, message.acc, &messageT3T4.pitch);
-				Roll(&hi2c3, message.acc, &messageT3T4.roll);
-				Yaw2(&hi2c3, message.acc, message.gyro, mag, &messageT3T4.yaw);
-
-				if(i == 20) // On envoie une valeur sur 20
-				{
-					if( xQueueSend( xQueueT2a_T3, ( void * ) &messageT3T4, portMAX_DELAY) != pdPASS )
-					{
-						printf("Erreur envoi data\n\r");
-					}
-
-					if( xQueueSend( xQueueT2a_T4, ( void * ) &messageT3T4, portMAX_DELAY) != pdPASS )
-					{
-						printf("Erreur envoi data\n\r");
-					}
-					i = 0;
+			    j = 0;
 				}
 				else{
-					i++;
+					j++;
 				}
+
+			Pitch(&hi2c3, message.acc, &messageT3T4.pitch);
+			Roll(&hi2c3, message.acc, &messageT3T4.roll);
+			Yaw2(&hi2c3, message.acc, message.gyro, mag, &messageT3T4.yaw);
+
+			if(i == 19) // On envoie une valeur sur 20
+			{
+				if( xQueueSend( xQueueT2a_T3, ( void * ) &messageT3T4, portMAX_DELAY) != pdPASS )
+				{
+					printf("Erreur envoi data\n\r");
+				}
+				if( xQueueSend( xQueueT2a_T4, ( void * ) &messageT3T4, portMAX_DELAY) != pdPASS )
+				{
+					printf("Erreur envoi data\n\r");
+				}
+				i = 0;
 			}
-		else
-		{
-			printf("Erreur recepetion data\n\r");
-			}
+			else{
+				i++;
+				}
+
 		}
 	}
 }
 
 void vTask2b(void *pvParameters ){
-	double P;
-	double A;
+	message_capteur2 messageRecu;
+
+	message_calcul2 messageEnv;
 	int i = 0;
 
 	while(1)
 	{
-		if( xQueueReceive( xQueueT1b_T2b, ( void * ) &P, portMAX_DELAY ) == pdPASS )
+		if( xQueueReceive( xQueueT1b_T2b, ( void * ) &messageRecu, portMAX_DELAY ) == pdPASS )
 		{
-				A = P;
-				A = 288.15/0.0065*(1 - pow(P/101325,1.0/5.255)); // calcul de l'altitude
-				if(i == 10) // On envoie une valeur sur 20
+				messageEnv.A = 288.15/0.0065*(1 - pow(messageRecu.P/101325,1.0/5.255)); // calcul de l'altitude
+				messageEnv.T = messageRecu.T;
+				if(i == 9) // On envoie une valeur sur 10
 				{
-					if( xQueueSend( xQueueT2b_T3, ( void * ) &A, portMAX_DELAY) != pdPASS )
+					if( xQueueSend( xQueueT2b_T3, ( void * ) &messageEnv, portMAX_DELAY) != pdPASS )
 					{
 						printf("Erreur envoi data\n\r");
 					}
 
-					if( xQueueSend( xQueueT2b_T4, ( void * ) &A, portMAX_DELAY) != pdPASS )
+					if( xQueueSend( xQueueT2b_T4, ( void * ) &messageEnv, portMAX_DELAY) != pdPASS )
 					{
 						printf("Erreur envoi data\n\r");
 					}
@@ -357,40 +370,40 @@ void vTask2b(void *pvParameters ){
 }
 
 void vTask3(void *pvParameters ){
-	message_calcul message;
-	double A;
+	message_calcul messageT2a;
+	message_calcul2 messageT2b;
 	while(1)
 	{
 		xSemaphoreTake(SemB_3, portMAX_DELAY);
-		if( xQueueReceive( xQueueT2a_T3, ( void * ) &message, portMAX_DELAY ) != pdPASS )
+		if( xQueueReceive( xQueueT2a_T3, ( void * ) &messageT2a, portMAX_DELAY ) != pdPASS )
 		{
 			printf("Erreur recepetion data RS232\n\r");
 		}
-		if( xQueueReceive( xQueueT2b_T3, ( void * ) &A, portMAX_DELAY ) != pdPASS )
+		if( xQueueReceive( xQueueT2b_T3, ( void * ) &messageT2b, portMAX_DELAY ) != pdPASS )
 		{
 			printf("Erreur recepetion data RS232\n\r");
 		}
-		printf("pitch=%2.2f deg, roll=%2.2f deg/s, yaw=%2.2f deg/s,  altitude=%2.2f deg/s \n\r",message.roll,message.pitch, message.yaw, A);
+		printf("pitch=%2.2f deg, roll=%2.2f deg/s, yaw=%2.2f deg/s,  altitude=%2.2f m, temperature=%2.2f deg \n\r",messageT2a.roll, messageT2a.pitch, messageT2a.yaw, messageT2b.A, messageT2b.T);
 
 
 	}
 }
 
 void vTask4(void *pvParameters ){
-	message_calcul message;
-	double A;
+	message_calcul messageT2a;
+	message_calcul2 messageT2b;
 	while(1)
 	{
 		xSemaphoreTake(SemB_4, portMAX_DELAY);
-		if( xQueueReceive( xQueueT2a_T4, ( void * ) &message, portMAX_DELAY ) != pdPASS )
+		if( xQueueReceive( xQueueT2a_T4, ( void * ) &messageT2a, portMAX_DELAY ) != pdPASS )
 		{
 			printf("Erreur recepetion data LCD\n\r");
 		}
-		if( xQueueReceive( xQueueT2b_T4, ( void * ) &A, portMAX_DELAY ) != pdPASS )
+		if( xQueueReceive( xQueueT2b_T4, ( void * ) &messageT2b, portMAX_DELAY ) != pdPASS )
 		{
 			printf("Erreur recepetion data RS232\n\r");
 		}
-		GUI(message.roll, message.pitch,  message.yaw ,A,0);
+		GUI(messageT2a.roll, messageT2a.pitch,  messageT2a.yaw , messageT2b.A, messageT2b.T);
 
 
 	}
